@@ -12,6 +12,7 @@ dependencies = [
     "seaborn",
     "pythainlp>=5.3.4",
     "attacut>=1.0.6",
+    "wordcloud>=1.9.6",
 ]
 
 

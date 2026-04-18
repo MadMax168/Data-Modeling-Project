@@ -1,61 +1,125 @@
-# Data Visualization — Current Ideas
-
-## Overview
-
-Exploratory Data Analysis (EDA) of Thai Constitution data, covering 38 constitutions (Thai Buddhist years 2475–2564) with 4,706 sections across 31 distinct years.
+# Data Visualization Checklist
 
 ## Dataset
 
-- **Source:** `01_data_preparation/struc-data/csv/all_sections_combined.csv`
-- **Shape:** 4,706 rows × 6 columns
-- **Columns:** `constitution_id`, `year_th`, `name_short`, `chapter_number`, `section_number`, `section_text`
-- **Key stats:** 38 unique constitutions, 336 unique section numbers, 18 chapter levels
-- **Notable:** 13 constitutions have variants (interim, amended, No.2–4)
+- **Source:** `data/preprocessed_data.csv`
+- **Shape:** 4,706 rows × 8 columns
+- **Columns:** `constitution_id`, `year_th`, `name_short`, `chapter_number`, `section_number`, `text`, `tokens`, `word_count`
+- **Scope:** 38 constitutions, Thai Buddhist years 2475–2564
 
-## Analysis Sections
+---
 
-### 1. Data Loading and Cleaning
-- Strip `"Constitution"` prefix from `name_short` for cleaner labels
-- Identify and flag constitutions with parenthetical variants (interim, amended, numbered revisions)
+## `basic_eda.ipynb`
 
-### 2. Basic Structural EDA
-- **Volume analysis:** Bar chart of section counts per constitution — shows which constitutions are more detailed
-- **Text length distribution:** Histogram with KDE of character counts per section — reveals how verbose individual sections are
+Foundational structural and lexical exploration of the corpus.
 
-### 3. Thai Tokenization and Preprocessing
-- Compare two tokenization engines: `newmm` vs `attacut` (via PyThaiNLP)
-- Use `attacut` as the primary engine for final tokenization
-- Remove Thai stopwords (PyThaiNLP corpus) and punctuation/symbols
-- Visualize word count distribution per section after cleaning
+### Data Loading & Cleaning
+- [x] Load preprocessed CSV and parse `tokens` column from string
+- [x] Inspect schema (`df.info()`, `df.nunique()`)
+- [x] Identify constitutions with parenthetical variants (interim, amended, No.X)
 
-### 4. Bag-of-Words (BoW) Analysis
-- Aggregate all tokens across the entire corpus
-- Bar chart of top 20 most frequent words — surface the most common constitutional vocabulary
+### Structural EDA
+- [x] Bar chart — number of sections per constitution
+- [x] Histogram + KDE — distribution of section text lengths (characters)
+- [x] Box plot — overall section text length distribution
+- [x] Box plot — text length per constitution
 
-### 5. N-Gram Analysis
-- Compute top 20 bigrams and trigrams across the full corpus
-- Subplots for bigrams and trigrams side-by-side — reveals common multi-word legal phrases
+### Tokenization
+- [x] Histogram + KDE — word count distribution per section
+- [x] Box plot — overall word count distribution
+- [x] Box plot — word count per constitution
 
-### 6. TF-IDF Analysis
-- Vectorize tokenized text using `TfidfVectorizer` with pre-tokenized input
-- Plot top 20 distinctive words by mean TF-IDF score — identifies terms that are important but not universally common
-- **Interactive widget:** `ipywidgets` slider (n=1–10) to dynamically explore top TF-IDF n-grams at any granularity
+### Bag-of-Words (BoW)
+- [x] Bar chart — top 20 most frequent tokens (all corpus)
 
-## Tools & Libraries
+### N-Gram Analysis
+- [x] Bar chart — top 20 bigrams (all corpus)
+- [x] Bar chart — top 20 trigrams (all corpus)
 
-| Tool | Purpose |
+### TF-IDF (Global)
+- [x] Bar chart — top 20 globally distinctive words by mean TF-IDF score
+- [x] Interactive slider widget — explore top TF-IDF n-grams (n=1–10)
+
+### Per-Constitution TF-IDF
+- [x] Grid of bar charts — top 10 distinctive words for first 3 constitutions
+- [x] Interactive dropdown — explore top 10 distinctive words for any constitution
+
+### Timeline Analysis
+- [x] 4-panel chart — total sections, avg text length, avg word count, unique vocab size over time
+- [x] Line chart — Type-Token Ratio (TTR / lexical richness) over constitutional history
+
+### Cross-Constitution Similarity
+- [x] Heatmap — 38×38 pairwise cosine similarity matrix (TF-IDF)
+- [x] Table — top 15 most similar and top 10 least similar pairs
+- [x] Clustermap — hierarchically clustered similarity matrix
+
+### Word Cloud
+- [x] Word cloud — all constitutions combined (top 200 words)
+- [x] Interactive dropdown — word cloud for any single constitution
+
+---
+
+## `advance_eda.ipynb`
+
+Deeper structural and comparative analysis beyond surface-level counts.
+
+### Chapter Structure
+- [x] Heatmap — `chapter_number` × `constitution` (section density per chapter per constitution)
+- [x] Violin plot — `section_number` distribution grouped by `chapter_number`
+
+### Era Comparison
+- [x] Box plot — section text length grouped by historical era (pre-WWII / Cold War / Modern / Democracy Era), split by interim vs full
+- [x] Overlay timeline charts with `axvspan` shading for interim constitutions
+
+### Vocabulary Evolution
+- [x] Line chart — cumulative unique token count as sections are added chronologically (vocabulary growth curve)
+- [x] Line chart — vocabulary growth with constitution boundaries annotated
+- [x] Bump chart — rank of top 10 words across constitutions over time
+
+### KWIC Explorer
+- [x] Interactive KWIC explorer — search a keyword, display ±5 token context from matching sections
+
+### Rare Word Analysis
+- [x] Log-scale frequency spectrum — how many words appear N times
+- [x] Pie chart — vocabulary split into hapax (×1), low-freq (×2–5), common (>5)
+- [x] 3×3 grid — top 15 exclusive rare words per constitution (first 9 chronologically)
+- [x] Interactive dropdown + top-N slider — explore exclusive rare words for any constitution
+
+---
+
+## `topic_modelling.ipynb`
+
+Unsupervised discovery of latent themes across constitutional sections.
+
+### LDA Topic Modeling
+- [ ] Train LDA on all tokenized sections (`sklearn` or `gensim`)
+- [ ] Choose optimal number of topics (perplexity / coherence score plot)
+- [ ] Bar charts — top keywords per topic
+- [ ] `pyLDAvis` interactive topic visualization
+
+### Topic Distribution Over Time
+- [ ] Stacked bar chart — topic proportion per constitution, sorted chronologically
+- [ ] Line chart — dominant topic share per constitution over time
+
+### Section-Level Topic Labeling
+- [ ] Assign dominant topic to each section row
+- [ ] Heatmap — topic distribution across `chapter_number` × `constitution`
+- [ ] Table — representative sections (highest probability) for each topic
+
+---
+
+## Libraries
+
+| Library | Used in |
 |---|---|
-| `pandas` | Data loading and manipulation |
-| `matplotlib` / `seaborn` | Static visualizations |
-| `pythainlp` | Thai tokenization and stopword removal |
-| `sklearn TfidfVectorizer` | TF-IDF computation |
-| `ipywidgets` | Interactive n-gram explorer |
-| `LINESeedSansTH` font | Thai character rendering in plots |
-
-## Next Ideas / Gaps
-
-- Per-constitution TF-IDF comparison (distinctive words per era, not global)
-- Topic modeling (LDA or BERTopic) to cluster sections by theme
-- Timeline analysis — how vocabulary/length evolves across constitutional history
-- Cross-constitution similarity heatmap
-- Named entity / legal term extraction
+| `pandas`, `numpy` | all notebooks |
+| `matplotlib`, `seaborn` | all notebooks |
+| `sklearn TfidfVectorizer`, `cosine_similarity` | basic_eda, advance_eda |
+| `pythainlp` | preprocessing (upstream) |
+| `wordcloud` | basic_eda |
+| `ipywidgets` | basic_eda, advance_eda |
+| `scipy` (clustermap) | basic_eda |
+| `collections.Counter` | advance_eda |
+| `sklearn LDA` / `gensim` | topic_modelling |
+| `pyLDAvis` | topic_modelling |
+| `LINESeedSansTH` font | all notebooks |
