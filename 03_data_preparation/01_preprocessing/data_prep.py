@@ -207,6 +207,8 @@ FIELDNAMES = [
     "parent_doc_id",
     "chapter_number",
     "chapter_title",
+    "sub_section_number",
+    "sub_section_title",
     "section_number",
     "section_role",
     "target_chapter",
@@ -234,6 +236,13 @@ def process_file(json_path: Path) -> list[dict]:
         p.get("raw_markdown", "") for p in raw.get("pages", [])
     )
     cleaned = clean_text(full_text)
+
+    # const_2489 source JSON has an appended electoral-regulation document after the
+    # constitution proper — truncate before it to avoid spurious chapters/sections
+    if doc_id == "const_2489":
+        cutoff = cleaned.find('ข้อ 1 ประกาศฉบับนี้')
+        if cutoff != -1:
+            cleaned = cleaned[:cutoff]
 
     rows = []
 
@@ -313,13 +322,25 @@ def _parse_full_constitution(
 ) -> list[dict]:
     rows = []
 
-    # detect chapters
+    # Normalise markdown artefacts so chapter/sub-section patterns are plain text
+    text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)
+    text = re.sub(r"^#{1,6}\s*", "", text, flags=re.MULTILINE)
+    # "หมวด 5-" → "หมวด 5"
+    text = re.sub(r"(หมวด\s*\d+)\s*-\s*$", r"\1", text, flags=re.MULTILINE)
+
+    # --- chapter detection (หมวด only — บทที่ is a sub-section label, not a chapter) ---
     _RE_CHAPTER = re.compile(
-        r"(?:^|\n)(?:หมวด(?:ที่)?\s*(\d+)\s*(.*)|บท(?:ที่)?\s*(\d+)\s*(.*))$",
+        r"(?:^|\n)หมวด(?:ที่)?\s*(\d+)\s*(.*)$",
         re.MULTILINE,
     )
     _RE_SPECIAL = re.compile(
         r"(?:^|\n)(บททั่วไป|บทเฉพาะ(?:กาล)?|บทบัญญัติเฉพาะ(?:กาล)?|บทนำ)\s*$",
+        re.MULTILINE,
+    )
+
+    # --- sub-section detection (ส่วนที่ N, title may be inline or on next line) ---
+    _RE_SUB = re.compile(
+        r"(?:^|\n)ส่วนที่\s*(\d+)\s*([^\n]*)$",
         re.MULTILINE,
     )
 
@@ -329,38 +350,105 @@ def _parse_full_constitution(
         chap_num = 0 if "ทั่วไป" in title or "นำ" in title else -1
         chapter_splits.append((m.start(), chap_num, title))
     for m in _RE_CHAPTER.finditer(text):
-        if m.group(1):
-            chapter_splits.append((m.start(), int(m.group(1)), m.group(2).strip()))
-        elif m.group(3):
-            chapter_splits.append((m.start(), int(m.group(3)), m.group(4).strip()))
+        chapter_splits.append((m.start(), int(m.group(1)), m.group(2).strip()))
     chapter_splits.sort(key=lambda x: x[0])
 
     if not chapter_splits:
         chapter_splits = [(0, 0, "บททั่วไป")]
 
     for i, (pos, chap_num, chap_title) in enumerate(chapter_splits):
-        end = chapter_splits[i + 1][0] if i + 1 < len(chapter_splits) else len(text)
-        segment = text[pos:end]
-        for sec_no, sec_text in split_sections(segment):
-            rows.append({
-                "section_id": f"{doc_id}_s_{sec_no}",
-                "doc_id": doc_id,
-                "doc_type": doc_type,
-                "year_th": year_th,
-                "year_ce": year_ce,
-                "name_short": name_short,
-                "era": era,
-                "regime_type": regime_type,
-                "parent_doc_id": "",
-                "chapter_number": chap_num,
-                "chapter_title": chap_title,
-                "section_number": sec_no,
-                "section_role": "content",
-                "target_chapter": "",
-                "target_section_no": "",
-                "change_mode": "content",
-                "text": sec_text,
-            })
+        chap_end = chapter_splits[i + 1][0] if i + 1 < len(chapter_splits) else len(text)
+        chap_segment = text[pos:chap_end]
+
+        # collect ส่วนที่ boundaries within this chapter
+        sub_splits = []
+        for m in _RE_SUB.finditer(chap_segment):
+            sub_num = int(m.group(1))
+            inline_title = m.group(2).strip()
+            # if title is blank, peek at the next non-empty line (skip บทที่ labels)
+            if not inline_title:
+                rest = chap_segment[m.end():].lstrip("\n")
+                next_line = rest.split("\n")[0].strip()
+                # บทที่ lines are structural labels, not the ส่วนที่ title
+                if next_line and not re.match(r"บทที่\s*\d+", next_line):
+                    inline_title = next_line
+            sub_splits.append((m.start(), sub_num, inline_title))
+
+        if not sub_splits:
+            # no ส่วนที่ in this chapter — emit sections directly
+            for sec_no, sec_text in split_sections(chap_segment):
+                rows.append({
+                    "section_id": f"{doc_id}_s_{sec_no}",
+                    "doc_id": doc_id,
+                    "doc_type": doc_type,
+                    "year_th": year_th,
+                    "year_ce": year_ce,
+                    "name_short": name_short,
+                    "era": era,
+                    "regime_type": regime_type,
+                    "parent_doc_id": "",
+                    "chapter_number": chap_num,
+                    "chapter_title": chap_title,
+                    "sub_section_number": "",
+                    "sub_section_title": "",
+                    "section_number": sec_no,
+                    "section_role": "content",
+                    "target_chapter": "",
+                    "target_section_no": "",
+                    "change_mode": "content",
+                    "text": sec_text,
+                })
+        else:
+            # emit sections before the first ส่วนที่ (if any) without sub-section info
+            pre_segment = chap_segment[:sub_splits[0][0]]
+            for sec_no, sec_text in split_sections(pre_segment):
+                rows.append({
+                    "section_id": f"{doc_id}_s_{sec_no}",
+                    "doc_id": doc_id,
+                    "doc_type": doc_type,
+                    "year_th": year_th,
+                    "year_ce": year_ce,
+                    "name_short": name_short,
+                    "era": era,
+                    "regime_type": regime_type,
+                    "parent_doc_id": "",
+                    "chapter_number": chap_num,
+                    "chapter_title": chap_title,
+                    "sub_section_number": "",
+                    "sub_section_title": "",
+                    "section_number": sec_no,
+                    "section_role": "content",
+                    "target_chapter": "",
+                    "target_section_no": "",
+                    "change_mode": "content",
+                    "text": sec_text,
+                })
+
+            for j, (sub_pos, sub_num, sub_title) in enumerate(sub_splits):
+                sub_end = sub_splits[j + 1][0] if j + 1 < len(sub_splits) else len(chap_segment)
+                sub_segment = chap_segment[sub_pos:sub_end]
+                for sec_no, sec_text in split_sections(sub_segment):
+                    rows.append({
+                        "section_id": f"{doc_id}_s_{sec_no}",
+                        "doc_id": doc_id,
+                        "doc_type": doc_type,
+                        "year_th": year_th,
+                        "year_ce": year_ce,
+                        "name_short": name_short,
+                        "era": era,
+                        "regime_type": regime_type,
+                        "parent_doc_id": "",
+                        "chapter_number": chap_num,
+                        "chapter_title": chap_title,
+                        "sub_section_number": sub_num,
+                        "sub_section_title": sub_title,
+                        "section_number": sec_no,
+                        "section_role": "content",
+                        "target_chapter": "",
+                        "target_section_no": "",
+                        "change_mode": "content",
+                        "text": sec_text,
+                    })
 
     return rows
 
