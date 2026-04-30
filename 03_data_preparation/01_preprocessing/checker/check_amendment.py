@@ -5,7 +5,7 @@ import csv
 from pathlib import Path
 
 
-DEFAULT_CSV_PATH = Path(__file__).resolve().parents[1] / "output" / "sections_v2.csv"
+DEFAULT_CSV_PATH = Path(__file__).resolve().parents[2] / "output" / "sections_v2.csv"
 REQUIRED_DOC_TYPES = {"full", "interim"}
 NULL_MARKERS = {"", "na", "n/a", "nan", "none", "null"}
 
