@@ -19,7 +19,7 @@ from parser_2495 import parse_2495
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-ROOT = Path(__file__).parent.parent
+ROOT = Path(__file__).parent.parent.parent
 INPUT_DIR = ROOT / "01_data_preparation" / "data"
 OUTPUT_DIR = ROOT / "03_data_preparation" / "output"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
