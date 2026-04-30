@@ -1,0 +1,4 @@
+﻿section_id,doc_id,doc_type,year_th,year_ce,name_short,era,regime_type,parent_doc_id,chapter_number,chapter_title,section_number,section_role,target_chapter,target_section_no,change_mode,text
+const_2482_s_1,const_2482,amendment,2482,1939,Constitution 2482,early_democracy,civilian,const_2475,0,,1,wrapper,,,meta,"รัฐธรรมนูญนี้ให้เรียกว่า ""รัฐธรรมนูญแก้ไข เพิ่มเติมว่าด้วยนามประเทศ พุทธศักราช 2482"""
+const_2482_s_2,const_2482,amendment,2482,1939,Constitution 2482,early_democracy,civilian,const_2475,0,,2,wrapper,,,meta,ให้ใช้รัฐธรรมนูญนี้ตั้งแต่วันประกาศใน
+const_2482_s_3,const_2482,amendment,2482,1939,Constitution 2482,early_democracy,civilian,const_2475,0,,3,wrapper,,,text_substitution,นามประเทศนี้ให้เรียกว่า ประเทศไทย และ บทแห่งรัฐธรรมนูญหรือกฎหมายอื่นใด ซึ่งใช้คำว่า สยาม ให้ใช้คำว่า ไทย แทน ผู้รับสนองพระบรมราชโองการ พิบูลสงคราม นายกรัฐมนตรี
