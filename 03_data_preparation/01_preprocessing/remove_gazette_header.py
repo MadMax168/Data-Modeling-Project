@@ -13,32 +13,93 @@ import csv
 import re
 from pathlib import Path
 
-# 1) Optional 1-3 digit page number before "ตอนที่" will be removed too.
+DATE_PART = r"[0-9๐-๙]{1,2}\s+\S+\s+[0-9๐-๙]{4}"
+
+# 1) Optional page number before ตอนที่ + (เล่ม|เรื่อง)
 PATTERN_TONTEE = (
-    r"(?:^|\s)"
-    r"(?:[0-9๐-๙]{1,3}(?:\s+[0-9๐-๙]{1,3})?\s+)?"  # page number, e.g. "345" or "3 47"
-    r"ตอนที่\s*[0-9๐-๙]+\s+"
-    r"(?:เล่ม|เรื่อง)\s*[0-9๐-๙]+\s+"
-    r"ราชกิจจานุเบกษา\s+[0-9๐-๙]{1,2}\s+\S+\s+[0-9๐-๙]{4}"
-    r"(?=\s|$)"
+    r"(?:^|\s)(?:[0-9๐-๙]{1,3}(?:\s+[0-9๐-๙]{1,3})?\s+)?"
+    r"ตอนที่\s*[0-9๐-๙]+\s+(?:เล่ม|เรื่อง)\s*[0-9๐-๙]+\s+"
+    r"ราชกิจจานุเบกษา\s+(?:วัน(?:ที่)?\s+)?"
+    rf"{DATE_PART}(?=\s|$)"
 )
 
-# 2) "เล่ม 49 หน้า 536 ราชกิจจานุเบกษา วันที่ 10 ธันวาคม 2475"
+# 2) เล่ม/หน้า ... ราชกิจจานุเบกษา ... วันที่ ...
 PATTERN_VOLUME_PAGE = (
-    r"(?:^|\s)เล่ม\s*[0-9๐-๙]+\s+หน้า\s*[0-9๐-๙]+\s+ราชกิจจานุเบกษา\s+วัน(?:ที่)?\s+[0-9๐-๙]{1,2}\s+\S+\s+[0-9๐-๙]{4}(?=\s|$)"
+    r"(?:^|\s)เล่ม\s*[0-9๐-๙]+\s+หน้า\s*[0-9๐-๙]+\s+ราชกิจจานุเบกษา\s+"
+    r"(?:วัน(?:ที่)?\s+)?"
+    rf"{DATE_PART}(?=\s|$)"
 )
 
-GAZETTE_HEADER_RE = re.compile(f"(?:{PATTERN_TONTEE}|{PATTERN_VOLUME_PAGE})")
+# 3) ราชกิจจานุเบกษา ... เล่ม/หน้า ... (วันที่ optional)
+PATTERN_GAZETTE_THEN_VOLUME = (
+    r"(?:^|\s)ราชกิจจานุเบกษา\s+เล่ม\s*[0-9๐-๙]+\s+หน้า\s*[0-9๐-๙]+"
+    r"(?:\s+วัน(?:ที่)?\s+"
+    rf"{DATE_PART})?(?=\s|$)"
+)
+
+# 4) วัน... ราชกิจจานุเบกษา เล่ม... หน้า...
+PATTERN_DATE_THEN_GAZETTE = (
+    r"(?:^|\s)(?:วัน(?:ที่)?|วัน\w+ที่)\s+"
+    rf"{DATE_PART}\s+ราชกิจจานุเบกษา\s+เล่ม\s*[0-9๐-๙]+\s+หน้า\s*[0-9๐-๙]+(?=\s|$)"
+)
+
+# 5) ฉบับพิเศษ หน้า ... ตอนที่ ... เล่ม ...
+PATTERN_SPECIAL_ISSUE = (
+    r"(?:^|\s)ฉบับพิเศษ\s+หน้า\s*[0-9๐-๙]+\s+ตอนที่\s*[0-9๐-๙]+\s+"
+    r"เล่ม\s*[0-9๐-๙]+\s+ราชกิจจานุเบกษา\s+(?:วัน(?:ที่)?\s+)?"
+    rf"{DATE_PART}(?=\s|$)"
+)
+
+GAZETTE_HEADER_RE = re.compile(
+    "|".join(
+        [
+            PATTERN_TONTEE,
+            PATTERN_VOLUME_PAGE,
+            PATTERN_GAZETTE_THEN_VOLUME,
+            PATTERN_DATE_THEN_GAZETTE,
+            PATTERN_SPECIAL_ISSUE,
+        ]
+    )
+)
+
+FALLBACK_GAZETTE_RE = re.compile(
+    r"(?:^|\s).{0,48}?"
+    r"(?:ฉบับพิเศษ|ตอนที่|เล่ม(?:ที่)?|เรื่อง|หน้า|วัน(?:ที่)?)"
+    r".{0,48}?ราชกิจจานุเบกษา.{0,56}?"
+    r"(?:[0-9๐-๙]{1,2}\s+\S+\s+[0-9๐-๙-]{3,4}|[0-9๐-๙]{4})(?=\s|$)",
+    re.DOTALL,
+)
 
 
-def clean_text(text: str) -> str:
-    cleaned = GAZETTE_HEADER_RE.sub(" ", text)
+AGGRESSIVE_FRAGMENT_RE = re.compile(
+    r"(?:^|\s)"
+    r"(?:ฉบับพิเศษ|ตอนที่|เล่ม(?:ที่)?|เรื่อง|หน้า)"
+    r".{0,36}?"
+    r"ราชกิจจานุเบกษา"
+    r"(?:.{0,20}?(?:[0-9๐-๙]{1,4}|วัน(?:ที่)?))?"
+    r"(?=\s|$)",
+    re.DOTALL,
+)
+
+SPECIAL_PAGE_ONLY_RE = re.compile(
+    r"(?:^|\s)ฉบับพิเศษ\s+หน้า\s*[0-9๐-๙]{1,4}(?=\s|$)"
+)
+
+
+def clean_text(text: str, aggressive: bool = False) -> str:
+    cleaned = text
+    for _ in range(2):
+        cleaned = GAZETTE_HEADER_RE.sub(" ", cleaned)
+    cleaned = FALLBACK_GAZETTE_RE.sub(" ", cleaned)
+    if aggressive:
+        cleaned = AGGRESSIVE_FRAGMENT_RE.sub(" ", cleaned)
+        cleaned = SPECIAL_PAGE_ONLY_RE.sub(" ", cleaned)
     cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
-    cleaned = re.sub(r" *\\n *", "\\n", cleaned)
+    cleaned = re.sub(r" *\n *", "\n", cleaned)
     return cleaned.strip()
 
 
-def clean_csv(input_path: Path, output_path: Path, column: str) -> None:
+def clean_csv(input_path: Path, output_path: Path, column: str, aggressive: bool) -> None:
     with input_path.open("r", encoding="utf-8", newline="") as f_in:
         reader = csv.DictReader(f_in)
         fieldnames = reader.fieldnames
@@ -51,7 +112,7 @@ def clean_csv(input_path: Path, output_path: Path, column: str) -> None:
 
     for row in rows:
         value = row.get(column, "")
-        row[column] = clean_text(value) if value else value
+        row[column] = clean_text(value, aggressive=aggressive) if value else value
 
     with output_path.open("w", encoding="utf-8", newline="") as f_out:
         writer = csv.DictWriter(f_out, fieldnames=fieldnames)
@@ -59,9 +120,9 @@ def clean_csv(input_path: Path, output_path: Path, column: str) -> None:
         writer.writerows(rows)
 
 
-def clean_txt(input_path: Path, output_path: Path) -> None:
+def clean_txt(input_path: Path, output_path: Path, aggressive: bool) -> None:
     text = input_path.read_text(encoding="utf-8")
-    output_path.write_text(clean_text(text), encoding="utf-8")
+    output_path.write_text(clean_text(text, aggressive=aggressive), encoding="utf-8")
 
 
 def parse_args() -> argparse.Namespace:
@@ -75,6 +136,11 @@ def parse_args() -> argparse.Namespace:
         default="text",
         help="Text column name for CSV input (default: text)",
     )
+    parser.add_argument(
+        "--aggressive",
+        action="store_true",
+        help="Also remove short/noisy Gazette fragments (OCR-heavy data)",
+    )
     return parser.parse_args()
 
 
@@ -83,9 +149,9 @@ def main() -> None:
     suffix = args.input.suffix.lower()
 
     if suffix == ".csv":
-        clean_csv(args.input, args.output, args.column)
+        clean_csv(args.input, args.output, args.column, args.aggressive)
     else:
-        clean_txt(args.input, args.output)
+        clean_txt(args.input, args.output, args.aggressive)
 
 
 if __name__ == "__main__":
