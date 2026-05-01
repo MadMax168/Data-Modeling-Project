@@ -50,6 +50,12 @@ PATTERN_SPECIAL_ISSUE = (
     rf"{DATE_PART}(?=\s|$)"
 )
 
+# 6) "เล่ม 134 ตอนที่ 40 ก 6 เมษายน 2560" (without "ราชกิจจานุเบกษา")
+PATTERN_VOLUME_TONTEE_K = (
+    r"(?:^|\s)เล่ม\s*[0-9๐-๙]+\s+ตอนที่\s*[0-9๐-๙]+\s*ก\s+"
+    rf"{DATE_PART}(?=\s|$)"
+)
+
 GAZETTE_HEADER_RE = re.compile(
     "|".join(
         [
@@ -58,6 +64,7 @@ GAZETTE_HEADER_RE = re.compile(
             PATTERN_GAZETTE_THEN_VOLUME,
             PATTERN_DATE_THEN_GAZETTE,
             PATTERN_SPECIAL_ISSUE,
+            PATTERN_VOLUME_TONTEE_K,
         ]
     )
 )
