@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 from pathlib import Path
 import re
 
@@ -12,8 +13,35 @@ OUTPUT_DIR = BASE_DIR / "output" / "sections_v2_by_year"
 DOC_ID_PATTERN = re.compile(r"const_(\d{4}[a-z]?)$", re.IGNORECASE)
 
 
+def load_sections_csv(csv_path: Path) -> pd.DataFrame:
+    with csv_path.open("r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.reader(f)
+        header = next(reader)
+        expected = len(header)
+        fixed_rows: list[list[str]] = []
+
+        for line_no, row in enumerate(reader, start=2):
+            if len(row) == expected:
+                fixed_rows.append(row)
+                continue
+
+            if len(row) > expected:
+                # Unquoted commas in free-text fields spill into extra columns.
+                fixed_rows.append(row[: expected - 1] + [",".join(row[expected - 1 :])])
+                print(
+                    f"[warn] repaired line {line_no}: "
+                    f"{len(row)} -> {expected} columns (merged tail into text)"
+                )
+                continue
+
+            fixed_rows.append(row + [""] * (expected - len(row)))
+            print(f"[warn] repaired line {line_no}: {len(row)} -> {expected} columns (padded missing fields)")
+
+    return pd.DataFrame(fixed_rows, columns=header)
+
+
 def main() -> None:
-    df = pd.read_csv(INPUT_CSV, encoding="utf-8-sig")
+    df = load_sections_csv(INPUT_CSV)
 
     if "year_th" not in df.columns:
         raise ValueError("Missing required column: year_th")
