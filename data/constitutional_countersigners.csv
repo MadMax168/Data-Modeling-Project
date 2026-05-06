@@ -1,0 +1,39 @@
+﻿id,year_th,year_ce,constitution,type,countersigner_name,position,source_file,note
+const_2475,2475,1932,Constitution 2475,new/interim constitution,พระยามโนปกรณนิติธาดา,ประธานคณะกรรมการราษฎร,01_data_preparation/data/const_2475.json,
+const_2482,2482,1939,Constitution 2482,new/interim constitution,พิบูลสงคราม,นายกรัฐมนตรี,01_data_preparation/data/const_2482.json,
+const_2483,2483,1940,Constitution 2483,new/interim constitution,พิบูลสงคราม,นายกรัฐมนตรี,01_data_preparation/data/const_2483.json,
+const_2485,2485,1942,Constitution 2485,new/interim constitution,จอมพล ป. พิบูลสงคราม,นายกรัฐมนตรี,01_data_preparation/data/const_2485.json,
+const_2489,2489,1946,Constitution 2489,new/interim constitution,ปรีดี พนมยงค์,นายกรัฐมนตรี,01_data_preparation/data/const_2489.json,OCR corrected from ปริติ
+const_2490a,2490,1947,Constitution 2490 (interim),new/interim constitution,จอมพล ป. พิบูลสงคราม,ผู้บัญชาการทหารแห่งประเทศไทย,01_data_preparation/data/const_2490a.json,
+const_2490b,2490,1947,Constitution 2490 (amended),amendment,ควง อภัยวงศ์,นายกรัฐมนตรี,01_data_preparation/data/const_2490b.json,OCR corrected from ดวง
+const_2491a,2491,1948,Constitution 2491 (No.2),amendment,ควง อภัยวงศ์,นายกรัฐมนตรี,01_data_preparation/data/const_2491a.json,OCR corrected from ดวง อกัยวงศ์
+const_2491b,2491,1948,Constitution 2491 (No.3),amendment,จอมพล ป. พิบูลสงคราม,นายกรัฐมนตรี,01_data_preparation/data/const_2491b.json,
+const_2492,2492,1949,Constitution 2492,new/interim constitution,ศรีธรรมาธิเบศ,ประธานวุฒิสภา,01_data_preparation/data/const_2492.json,
+const_2495,2495,1952,Constitution 2495,new/interim constitution,จอมพล ป. พิบูลสงคราม,นายกรัฐมนตรี,01_data_preparation/data/const_2495.json,
+const_2502,2502,1959,Constitution 2502,new/interim constitution,จอมพล สฤษดิ์ ธนะรัชต์,หัวหน้าคณะปฏิวัติ,01_data_preparation/data/const_2502.json,
+const_2511,2511,1968,Constitution 2511,new/interim constitution,นายทวี บุณยเกตุ,ประธานสภาร่างรัฐธรรมนูญ,01_data_preparation/data/const_2511.json,
+const_2515,2515,1972,Constitution 2515,new/interim constitution,จอมพล ถนอม กิตติขจร,หัวหน้าคณะปฏิวัติ,01_data_preparation/data/const_2515.json,
+const_2517,2517,1974,Constitution 2517,new/interim constitution,หม่อมราชวงศ์คึกฤทธิ์ ปราโมช,ประธานสภานิติบัญญัติแห่งชาติ,01_data_preparation/data/const_2517.json,
+const_2518,2518,1975,Constitution 2518,new/interim constitution,สัญญา ธรรมศักดิ์,นายกรัฐมนตรี,01_data_preparation/data/const_2518.json,
+const_2519,2519,1976,Constitution 2519,new/interim constitution,พลเรือเอก สงัด ชลออยู่,หัวหน้าคณะปฏิรูปการปกครองแผ่นดิน,01_data_preparation/data/const_2519.json,
+const_2520,2520,1977,Constitution 2520,new/interim constitution,พลเรือเอก สงัด ชลออยู่,หัวหน้าคณะปฏิวัติ,01_data_preparation/data/const_2520.json,
+const_2521,2521,1978,Constitution 2521,new/interim constitution,พลอากาศเอก หะริน หงสกุล,ประธานสภานิติบัญญัติแห่งชาติ,01_data_preparation/data/const_2521.json,
+const_2528,2528,1985,Constitution 2528,amendment,พลเอก ป. ติณสูลานนท์,นายกรัฐมนตรี,01_data_preparation/data/const_2528.json,
+const_2532,2532,1989,Constitution 2532,amendment,พลเอก ชาติชาย ชุณหะวัณ,นายกรัฐมนตรี,01_data_preparation/data/const_2532.json,
+const_2534a,2534,1991,Constitution 2534 (interim),new/interim constitution,พลเอก สุนทร คงสมพงษ์,หัวหน้าคณะรักษาความสงบเรียบร้อยแห่งชาติ,01_data_preparation/data/const_2534a.json,
+const_2534b,2534,1991,Constitution 2534,new/interim constitution,อุกฤษ มงคลนาวิน,ประธานสภานิติบัญญัติแห่งชาติ,01_data_preparation/data/const_2534b.json,
+const_2535a,2535,1992,Constitution 2535 (No.1),amendment,อานันท์ ปันยารชุน,นายกรัฐมนตรี,01_data_preparation/data/const_2535a.json,
+const_2535b,2535,1992,Constitution 2535 (No.2),amendment,อานันท์ ปันยารชุน,นายกรัฐมนตรี,01_data_preparation/data/const_2535b.json,
+const_2535c,2535,1992,Constitution 2535 (No.3),amendment,อานันท์ ปันยารชุน,นายกรัฐมนตรี,01_data_preparation/data/const_2535c.json,OCR corrected from ปิ่นยารชุน
+const_2535d,2535,1992,Constitution 2535 (No.4),amendment,อานันท์ ปันยารชุน,นายกรัฐมนตรี,01_data_preparation/data/const_2535d.json,
+const_2538,2538,1995,Constitution 2538,amendment,ชวน หลีกภัย,นายกรัฐมนตรี,01_data_preparation/data/const_2538.json,OCR corrected from มิให้ ชวน / ขอ นายกรัฐมนตรี
+const_2539,2539,1996,Constitution 2539,amendment,บรรหาร ศิลปอาชา,นายกรัฐมนตรี,01_data_preparation/data/const_2539.json,
+const_2540,2540,1997,Constitution 2540,new/interim constitution,วันมูหะมัดนอร์ มะทา,ประธานรัฐสภา,01_data_preparation/data/const_2540.json,
+const_2548,2548,2005,Constitution 2548,amendment,พันตำรวจโท ทักษิณ ชินวัตร,นายกรัฐมนตรี,01_data_preparation/data/const_2548.json,
+const_2549,2549,2006,Constitution 2549 (interim),new/interim constitution,พลเอก สนธิ บุญยรัตกลิน,หัวหน้าคณะปฏิรูปการปกครองในระบอบประชาธิปไตยอันมีพระมหากษัตริย์ทรงเป็นประมุข,01_data_preparation/data/const_2549.json,position spans multiple OCR lines
+const_2550,2550,2007,Constitution 2550,new/interim constitution,มีชัย ฤชุพันธุ์,ประธานสภานิติบัญญัติแห่งชาติ,01_data_preparation/data/const_2550.json,
+const_2554a,2554,2011,Constitution 2554 (No.1),amendment,อภิสิทธิ์ เวชชาชีวะ,นายกรัฐมนตรี,01_data_preparation/data/const_2554a.json,
+const_2554b,2554,2011,Constitution 2554 (No.2),amendment,อภิสิทธิ์ เวชชาชีวะ,นายกรัฐมนตรี,01_data_preparation/data/const_2554b.json,
+const_2557,2557,2014,Constitution 2557 (interim),new/interim constitution,พลเอก ประยุทธ์ จันทร์โอชา,หัวหน้าคณะรักษาความสงบแห่งชาติ,01_data_preparation/data/const_2557.json,
+const_2560,2560,2017,Constitution 2560,new/interim constitution,พลเอก ประยุทธ์ จันทร์โอชา,นายกรัฐมนตรี,01_data_preparation/data/const_2560.json,uses ผู้รับสนองพระราชโองการ (without บรม) in source
+const_2564,2564,2021,Constitution 2564,amendment,พลเอก ประยุทธ์ จันทร์โอชา,นายกรัฐมนตรี,01_data_preparation/data/const_2564.json,
