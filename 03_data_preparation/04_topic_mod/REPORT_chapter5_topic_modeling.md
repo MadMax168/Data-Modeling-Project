@@ -1,67 +1,36 @@
 # บทที่ 5 การจำแนกหัวข้อด้วย Topic Modeling
 
-หลังจากผ่านกระบวนการเตรียมข้อมูลและวิเคราะห์เชิงสำรวจในบทที่ 3 และ 4 แล้ว ผู้จัดทำได้นำข้อมูลมาตราจาก `sections_v2.csv` มาผ่านกระบวนการ **Topic Modeling** เพื่อจัดกลุ่มมาตราตามเนื้อหาเชิงความหมาย (Semantic Content) โดยไม่ยึดโครงสร้างหมวดเดิมที่ไม่สอดคล้องกันระหว่างฉบับ
+หลังจากผ่านกระบวนการเตรียมข้อมูลและวิเคราะห์เชิงสำรวจในบทที่ 3 และ 4 แล้ว ผู้จัดทำได้นำข้อมูลมาตราจาก `sections_v2.csv` ทั้งหมด 2,797 มาตรา จาก 38 ฉบับ มาผ่านกระบวนการ Topic Modeling เพื่อจัดกลุ่มมาตราตามเนื้อหาเชิงความหมาย โดยไม่ยึดโครงสร้างหมวดเดิมที่ไม่สอดคล้องกันระหว่างฉบับ
 
 ---
 
 ## 5.1 ที่มาและปัญหา
 
-รัฐธรรมนูญไทย 38 ฉบับ (พ.ศ. 2475–2564) มีโครงสร้างหมวดที่ไม่สอดคล้องกันในแต่ละฉบับ — หมวดเดียวกันอาจมีชื่อต่างกัน หรือเนื้อหาเดียวกันอาจถูกจัดอยู่คนละหมวดในรัฐธรรมนูญต่างฉบับ ดังนั้นการจัดกลุ่มมาตราโดยอาศัย `chapter_title` หรือ `section_title` เพียงอย่างเดียวจึงไม่เพียงพอสำหรับการวิเคราะห์เชิงเปรียบเทียบข้ามฉบับ
+ปัญหาสำคัญที่นำมาสู่กระบวนการนี้คือรัฐธรรมนูญไทย 38 ฉบับ มีโครงสร้างหมวดที่ไม่สอดคล้องกัน หมวดเดียวกันอาจมีชื่อต่างกันในแต่ละฉบับ หรือเนื้อหาเดียวกันอาจถูกจัดอยู่คนละหมวดในรัฐธรรมนูญต่างยุคสมัย ดังนั้นการจัดกลุ่มมาตราโดยอาศัย `chapter_title` หรือ `section_title` เพียงอย่างเดียวจึงไม่เพียงพอสำหรับการวิเคราะห์เชิงเปรียบเทียบข้ามฉบับ
 
-วัตถุประสงค์ของส่วนนี้คือการใช้ **Topic Modeling** เพื่อจัดกลุ่มมาตราตามเนื้อหาเชิงความหมาย (Semantic Content) โดยไม่ยึดโครงสร้างหมวดเดิม นอกจากนี้ยังต้องการแสดงให้เห็นว่ามาตราหนึ่งสามารถมีส่วนร่วมในหลาย theme พร้อมกันได้ (Multi-theme Membership) ซึ่งสะท้อนความซับซ้อนของเนื้อหารัฐธรรมนูญที่มักครอบคลุมหลายประเด็นในมาตราเดียว
-
-**Input:** `sections_v2.csv` — 2,797 มาตรา จาก 38 รัฐธรรมนูญ
+วัตถุประสงค์ของบทนี้จึงมีสองส่วนหลัก ส่วนแรกคือการใช้ Topic Modeling เพื่อจัดกลุ่มมาตราตามเนื้อหาเชิงความหมาย (Semantic Content) แทนโครงสร้างหมวดเดิม และส่วนที่สองคือการแสดงให้เห็นว่ามาตราหนึ่งสามารถมีส่วนร่วมในหลาย Theme พร้อมกันได้ (Multi-theme Membership) ซึ่งสะท้อนความซับซ้อนของเนื้อหารัฐธรรมนูญที่มักครอบคลุมหลายประเด็นในมาตราเดียว
 
 ---
 
 ## 5.2 การพัฒนาวิธีการ (Methodology Progression)
 
-ผู้จัดทำได้ทดลองวิธีการหลายแนวทางก่อนจะได้ pipeline สุดท้าย โดยแต่ละ attempt ได้ข้อเรียนรู้ที่นำไปสู่การปรับปรุงในขั้นต่อไป
+ผู้จัดทำได้ทดลองวิธีการทั้งหมด 4 Attempts ก่อนจะได้ Pipeline สุดท้าย โดยแต่ละ Attempt ได้ข้อเรียนรู้ที่นำไปสู่การปรับปรุงในขั้นต่อไป
 
-### Attempt 0a — LDA (Latent Dirichlet Allocation)
+**Attempt 1** เริ่มจากการทดลอง LDA (Latent Dirichlet Allocation) ซึ่งเป็น Classic Probabilistic Topic Model โดยใช้ CountVectorizer แปลงข้อความเป็น Bag-of-Words Matrix แล้วให้ LDA ค้นหา Latent Topics วิธีนี้มองข้อความเป็นเพียงการนับความถี่ของคำ โดยสมมติว่า Document หนึ่งประกอบขึ้นจากการผสมหลาย Topics และแต่ละ Topic คือการกระจายตัวของคำ อย่างไรก็ตามพบว่า LDA ไม่เข้าใจความหมายเชิง Semantic เลย มองแค่ว่าคำไหน Co-occur กันบ่อย Topics ที่ได้จึงเป็นกลุ่มคำที่มักปรากฏด้วยกัน แต่ไม่สะท้อน Constitutional Theme ที่ชัดเจน ประกอบกับภาษาไทยต้องการ Tokenization พิเศษเพื่อแยกคำ ซึ่ง Bag-of-Words Approach ยิ่งทำให้สูญเสีย Context มากขึ้น บทเรียนจาก Attempt นี้คือจำเป็นต้องใช้วิธีที่เข้าใจความหมายเชิง Semantic และ Embedding Model ที่เหมาะกับภาษาไทยโดยเฉพาะ
 
-วิธีแรกที่ทดลองคือ LDA ซึ่งเป็น Classic Probabilistic Topic Model โดยใช้ CountVectorizer แปลงข้อความเป็น Bag-of-Words Matrix แล้วให้ LDA ค้นหา Latent Topics
+**Attempt 2** จึงเปลี่ยนมาใช้ WangchanBERTa (`airesearch/wangchanberta-base-att-spm-uncased`) ซึ่งเป็น BERT-based Model ที่ถูก Pre-train บน Thai Common Crawl Corpus โดยตรง ร่วมกับ BERTopic แบบ Unsupervised โดยไม่มี Seed Guidance ผลลัพธ์พบ 79 Topics แต่ยังมีปัญหาหลักสามประการ ได้แก่ มาตรา 617 มาตรา (22.1%) ถูก HDBSCAN จัดเป็น Outlier Cluster ไม่ได้รับ Topic ใดเลย จำนวน 79 Topics มีความละเอียดสูงเกินไปจนยากต่อการตีความในระดับ Constitutional Theme และ BERTopic Auto-generated Topic Names เป็นเพียง Top Keywords เช่น `0_ศาลฎีกา_ผู้ดํารงตําแหน่ง_ไต่สวน_ยื่น` ซึ่งต้องอาศัย Human Interpretation ทุก Topic และ Scale ไม่ได้กับ 79 Topics
 
-LDA มองข้อความเป็นเพียงการนับความถี่ของคำใน Document โดยสมมติว่า Document หนึ่งประกอบขึ้นจากการผสม (mix) หลาย Topics และแต่ละ Topic คือการกระจายตัว (Distribution) ของคำ โมเดลจะพยายามหา Topics ที่อธิบาย pattern การปรากฏร่วมกันของคำใน Corpus ได้ดีที่สุด
+**Attempt 3** จึงนำ Domain Knowledge ของโครงสร้างรัฐธรรมนูญไทยมาใช้โดยกำหนด Seed Themes ผ่าน `seed_topic_list` Parameter ของ BERTopic เริ่มจาก 14 Themes แล้วขยายเป็น 15 Themes โดยเพิ่ม "พรรคการเมืองและการเลือกตั้ง" เพื่อให้ครอบคลุมโครงสร้างรัฐธรรมนูญไทยได้ครบถ้วนขึ้น วิธีนี้ได้ 101 Topics พร้อม Soft Scoring ระดับมาตรา อย่างไรก็ตามพบว่า Soft Scoring ใน Attempt นี้ใช้ Keyword Overlap เป็น Heuristic เพียงอย่างเดียว ทำให้มาตราที่ไม่มี Seed Keyword ปรากฏในข้อความถึง 352 มาตรา (12.8%) ถูกจัดเป็น "อื่น ๆ (emergent)" ทั้งหมดโดยไม่คำนึงถึง Semantic Content ที่แท้จริง
 
-**ปัญหา:** LDA ไม่เข้าใจความหมายเชิง Semantic — มองแค่ว่าคำไหน Co-occur กันบ่อย Topic ที่ได้จึงเป็นกลุ่มคำที่มักปรากฏด้วยกัน แต่ไม่สะท้อน Constitutional Theme ที่ชัดเจน นอกจากนี้ภาษาไทยต้องการ Tokenization พิเศษเพื่อแยกคำ ซึ่ง Bag-of-Words Approach ยิ่งทำให้สูญเสีย Context มากขึ้น
+**Attempt 4** จึงแก้ปัญหา Emergent Rate ที่สูงนี้ด้วย Hybrid Approach โดยเพิ่ม Embedding-based Fallback สำหรับมาตราที่ Keyword Approach ไม่สามารถ Assign ได้ ซึ่งจะอธิบายละเอียดในหัวข้อ 5.3
 
-### Attempt 0b — BERTopic + text-embedding-3-large (OpenRouter)
-
-ปรับมาใช้ BERTopic ซึ่งใช้ Dense Embeddings แทน Bag-of-Words พร้อมเพิ่ม Visualizations เช่น Intertopic Distance Map และ Hierarchical Topic Tree เพื่อสำรวจโครงสร้างของ Topics
-
-**ปัญหา:** Embedding Model ที่ใช้คือ `text-embedding-3-large` ซึ่งเป็น General-purpose English-first Model เมื่อ Embed ข้อความภาษาไทย โมเดลจะ Map คำไทยเข้า Vector Space ที่ถูก Optimize สำหรับภาษาอังกฤษ ทำให้ Semantic Neighborhood ของคำไทยไม่ถูกต้อง — คำที่มีความหมายใกล้เคียงกันในภาษาไทยอาจอยู่ห่างกันมากใน Vector Space ส่งผลให้ Clustering ไม่สะท้อนความสัมพันธ์เชิงเนื้อหาที่แท้จริง
-
-**บทเรียน:** จำเป็นต้องใช้ Embedding Model ที่ถูก Pre-train บนภาษาไทยโดยเฉพาะ
-
-### Attempt 1 — WangchanBERTa + Unsupervised BERTopic
-
-เปลี่ยนมาใช้ **WangchanBERTa** (`airesearch/wangchanberta-base-att-spm-uncased`) ซึ่งเป็น BERT-based Model ที่ถูก Pre-train บน Thai Common Crawl Corpus โดยตรง ร่วมกับ BERTopic แบบ Unsupervised โดยไม่มี Seed Guidance
-
-**ผลลัพธ์:** พบ 79 Topics แต่มีปัญหาสามประการ:
-- 617 มาตรา (22.1%) ถูก HDBSCAN จัดเป็น Outlier Cluster (-1) ไม่ได้รับ Topic ใดเลย
-- 79 Topics มีความละเอียดสูงเกินไป ยากต่อการตีความในระดับ Constitutional Theme
-- BERTopic Auto-generated Topic Names เป็นเพียง Top c-TF-IDF Keywords เช่น `0_ศาลฎีกา_ผู้ดํารงตําแหน่ง_ไต่สวน_ยื่น` ซึ่งต้องอาศัย Human Interpretation ทุก Topic และ Scale ไม่ได้กับ 79 Topics
-
-### Attempt 2 & 3 — Guided BERTopic + Seed Themes
-
-นำ Domain Knowledge ของโครงสร้างรัฐธรรมนูญไทยมาใช้โดยกำหนด **Seed Themes** ผ่าน `seed_topic_list` Parameter ของ BERTopic — 14 Themes ใน Attempt 2 และ 15 Themes ใน Attempt 3 โดยเพิ่ม "พรรคการเมืองและการเลือกตั้ง"
-
-ได้ 101 Topics พร้อม Soft Scoring ระดับมาตรา อย่างไรก็ตาม Soft Scoring ในสอง Attempt นี้ใช้ Keyword Overlap เป็น Heuristic ทำให้มาตราที่ไม่มี Seed Keyword ปรากฏในข้อความ (352 มาตรา, 12.8%) ถูกจัดเป็น "อื่น ๆ (emergent)" ทั้งหมดโดยไม่คำนึงถึง Semantic Content
-
-### Attempt 4 — Hybrid Soft Scoring (Final)
-
-แก้ปัญหา Emergent Rate สูงด้วย Hybrid Approach โดยเพิ่ม Embedding-based Fallback สำหรับมาตราที่ Keyword Approach ไม่สามารถ Assign ได้ (อธิบายละเอียดใน 5.3)
-
-ตาราง 11 สรุปการพัฒนา Methodology ใน 5 Attempts
+ตาราง 11 สรุปการพัฒนา Methodology ใน 4 Attempts
 
 | Attempt | วิธีการ | ปัญหาหลัก |
 |---------|---------|-----------|
-| 0a | LDA + Bag-of-Words | ไม่เข้าใจ Semantic ภาษาไทย |
-| 0b | BERTopic + English Embedding | Embedding Space ไม่เหมาะกับภาษาไทย |
-| 1 | WangchanBERTa + Unsupervised BERTopic | 79 Topics ตีความยาก, 22.1% Outlier |
-| 2 | Guided BERTopic + 14 Seed Themes | Soft Score เป็น Keyword-based เท่านั้น |
-| 3 | เพิ่ม Theme พรรคการเมืองฯ รวม 15 Themes | Emergent ยังสูง 12.8% |
+| 1 | LDA + Bag-of-Words | ไม่เข้าใจ Semantic ภาษาไทย |
+| 2 | WangchanBERTa + Unsupervised BERTopic | 79 Topics ตีความยาก, 22.1% Outlier |
+| 3 | Guided BERTopic + 15 Seed Themes | Soft Score เป็น Keyword-based, Emergent สูง 12.8% |
 | **4** | **Hybrid Soft Scoring** | **Emergent ลดเหลือ 0.7%** |
 
 ---
@@ -70,89 +39,53 @@ LDA มองข้อความเป็นเพียงการนับ�
 
 ### 5.3.1 Preprocessing
 
-โหลด `sections_v2.csv` (2,797 มาตรา) แล้ว Tokenize ด้วย **AttaCut** ซึ่งเป็น Thai-specific Tokenizer ที่ใช้ Deep Learning Model แยกคำภาษาไทยได้แม่นยำกว่า Rule-based Approaches
+ขั้นตอนแรกของ Pipeline คือการโหลด `sections_v2.csv` จำนวน 2,797 มาตรา แล้ว Tokenize ด้วย AttaCut ซึ่งเป็น Thai-specific Tokenizer ที่ใช้ Deep Learning Model แยกคำภาษาไทยได้แม่นยำกว่า Rule-based Approaches จากนั้นกรอง Stopwords ออกด้วย 3 กลุ่มที่กำหนดเอง ได้แก่ Group A คือ Function Words ที่ทำหน้าที่ทางไวยากรณ์แต่ไม่มีความหมายเชิง Topic เช่น ตาม, แห่ง, โดย, ซึ่ง, Group B คือ Document Structure Noise ที่ปรากฏในทุกมาตราและจะ Dominate Embedding เช่น มาตรา, หมวด, วรรค, รัฐธรรมนูญ, ราชอาณาจักรไทย และ Group C คือ Legal Boilerplate ที่เป็นคำกฎหมายทั่วไปซึ่งไม่ช่วยแยกแยะ Theme เช่น กฎหมาย, ระเบียบ, ภายใต้, บังคับ
 
-จากนั้น Filter Stopwords 3 กลุ่มที่กำหนดเอง:
-
-- **Group A — Function Words:** คำที่ทำหน้าที่ทางไวยากรณ์แต่ไม่มีความหมายเชิง Topic เช่น ตาม, แห่ง, โดย, ซึ่ง, อัน, ใน, แก่, ต่อ, เพื่อ
-- **Group B — Document Structure Noise:** คำที่ปรากฏในทุกมาตราและจะ Dominate Embedding เช่น มาตรา, หมวด, วรรค, ส่วน, บท, รัฐธรรมนูญ, ราชอาณาจักรไทย
-- **Group C — Legal Boilerplate:** คำกฎหมายทั่วไปที่ไม่ Distinguish Theme เช่น กฎหมาย, ระเบียบ, ภายใต้, กรณี, บังคับ, บรรดา
-
-Group B มีความสำคัญเป็นพิเศษ — คำว่า "รัฐธรรมนูญ" ปรากฏในทุกมาตรา ถ้าไม่ Filter ออก Embedding ของทุกมาตราจะถูกดึงไปยังทิศทางเดียวกันใน Vector Space ทำให้แยกแยะ Theme ไม่ได้
-
-หลัง Preprocessing: 2,756 มาตรา (41 มาตราถูก Drop เพราะข้อความว่างหลัง Filter)
+Group B มีความสำคัญเป็นพิเศษ เนื่องจากคำว่า "รัฐธรรมนูญ" ปรากฏในทุกมาตรา หากไม่กรองออก Embedding ของทุกมาตราจะถูกดึงไปยังทิศทางเดียวกันใน Vector Space ทำให้แยกแยะ Theme ไม่ได้เลย หลัง Preprocessing เหลือมาตราที่ใช้งานได้ 2,756 มาตรา โดย 41 มาตราถูก Drop เนื่องจากข้อความว่างหลังการกรอง
 
 ### 5.3.2 Embedding
 
-แต่ละมาตราถูก Embed ด้วย **WangchanBERTa** (`airesearch/wangchanberta-base-att-spm-uncased`) ซึ่งเป็น CamemBERT (RoBERTa-based) Architecture ที่ถูก Pre-train บน Thai Common Crawl 78GB โดย AIResearch.in.th ใช้ SentencePiece Tokenizer ที่ Train บนภาษาไทยโดยเฉพาะ — ต่างจาก Multilingual Models ที่แบ่ง Capacity กับ 100+ ภาษา โมเดลนี้ใช้ 768 Dimensions ทั้งหมดสำหรับภาษาไทย
+แต่ละมาตราถูก Embed ด้วย WangchanBERTa (`airesearch/wangchanberta-base-att-spm-uncased`) ซึ่งเป็น CamemBERT (RoBERTa-based) Architecture ที่ถูก Pre-train บน Thai Common Crawl ขนาด 78GB โดย AIResearch.in.th โมเดลนี้ใช้ SentencePiece Tokenizer ที่ Train บนภาษาไทยโดยเฉพาะ ต่างจาก Multilingual Models ที่ต้องแบ่ง Capacity กับกว่า 100 ภาษา โดย WangchanBERTa ใช้ 768 Dimensions ทั้งหมดสำหรับภาษาไทยเพียงภาษาเดียว
 
-วิธี Embed: ส่ง Text เข้า WangchanBERTa Tokenizer (max_length=416) → รัน Forward Pass → Last Hidden State → Mean Pooling (เฉลี่ย Token Embeddings ที่ไม่ใช่ Padding) → L2 Normalization
-
-ผลลัพธ์: Matrix **2,797 × 768** — แต่ละแถวคือ Vector ที่แทนความหมายของมาตรานั้น
-
-```
-max_length = 416 tokens
-batch_size = 16
-device     = MPS (Apple Silicon)
-```
+กระบวนการ Embed เริ่มจากส่ง Text เข้า Tokenizer ด้วย max_length 416 Tokens จากนั้นรัน Forward Pass เพื่อได้ Last Hidden State แล้วทำ Mean Pooling โดยเฉลี่ย Token Embeddings ที่ไม่ใช่ Padding และ Normalize ด้วย L2 Normalization ผลลัพธ์ที่ได้คือ Matrix ขนาด 2,797 × 768 โดยแต่ละแถวคือ Vector ที่แทนความหมายของมาตรานั้น กระบวนการทั้งหมดรันด้วย Batch Size 16 บน MPS (Apple Silicon)
 
 ### 5.3.3 Semi-supervised Topic Discovery (Guided BERTopic)
 
-BERTopic ทำงานเป็น Orchestrator ที่เรียก 3 Components ต่อเนื่อง ทั้งหมดถูกกำหนด Parameters เอง:
+BERTopic ทำงานเป็น Orchestrator ที่เรียก 3 Components ต่อเนื่องกัน โดยเริ่มจาก UMAP สำหรับลด Dimensionality จาก 768 ลงเหลือ 5 Dimensions โดยรักษา Local Semantic Neighborhood ไว้ด้วยการกำหนด `n_neighbors=15` และใช้ `metric='cosine'` เพื่อวัดความคล้ายกันด้วย Angle ใน Vector Space แทน Distance
 
-**ขั้นที่ 1 — UMAP (Dimensionality Reduction)**
+จากนั้น HDBSCAN ค้นหา Density-based Clusters ใน 5D Space โดยไม่ต้องกำหนดจำนวน Cluster ล่วงหน้า ด้วย `min_cluster_size=12` หมายความว่า Cluster ต้องมีอย่างน้อย 12 มาตรา มิฉะนั้นจะถูกจัดเป็น Outlier (-1) และ `min_samples=3` เพื่อเพิ่มความ Robust ต่อ Noise
 
-ลด Embedding จาก 768 → 5 Dimensions โดยรักษา Local Semantic Neighborhood
-```
-UMAP(n_neighbors=15, n_components=5, min_dist=0.0, metric='cosine')
-```
-- `n_neighbors=15` — แต่ละจุดพิจารณา 15 Neighbors ใกล้สุดเมื่อสร้าง Low-dimensional Representation
-- `metric='cosine'` — วัดความคล้ายกันด้วย Angle ใน Vector Space ไม่ใช่ Distance
+ส่วนที่ทำให้ Attempt นี้เป็น Semi-supervised คือการส่ง 15 กลุ่มของ Seed Keywords ที่ Represent แต่ละ Constitutional Theme เข้า BERTopic ผ่าน `seed_topic_list` Parameter BERTopic จะ Embed Seed Keywords เหล่านี้เข้าสู่ Vector Space เดียวกันกับมาตรา แล้วใช้ตำแหน่งของ Seed Words เป็น Anchor เพื่อดึง Clusters ที่อยู่ใกล้เคียงให้รวมตัวรอบ Theme นั้น ตัวอย่างที่เห็นได้ชัดเจนคือมาตราเกี่ยวกับ "ผู้พิพากษา" สามารถ Cluster กับ Theme ตุลาการได้ แม้คำว่า "ผู้พิพากษา" จะไม่อยู่ใน Seed List ก็ตาม เพราะ WangchanBERTa รู้ว่า "ผู้พิพากษา" และ "ศาล" อยู่ใกล้กันใน Semantic Space ผลลัพธ์ที่ได้คือ 101 Topics ซึ่งถูก Map ไปยัง 15 Seed Themes
 
-**ขั้นที่ 2 — HDBSCAN (Clustering)**
+ตาราง 11 Seed Keywords ทั้ง 15 Themes ที่ใช้ใน seed_topic_list
 
-หา Density-based Clusters ใน 5D Space โดยไม่ต้องกำหนดจำนวน Cluster ล่วงหน้า
-```
-HDBSCAN(min_cluster_size=12, min_samples=3, metric='euclidean')
-```
-- `min_cluster_size=12` — Cluster ต้องมีอย่างน้อย 12 มาตรา ถ้าน้อยกว่าจะเป็น Outlier (-1)
-- `min_samples=3` — ความ Robust ต่อ Noise
-
-**ขั้นที่ 3 — seed_topic_list (Semi-supervised Guidance)**
-
-15 กลุ่มของ Seed Keywords ที่ Represent แต่ละ Constitutional Theme ถูกส่งเข้า BERTopic ผ่าน `seed_topic_list` Parameter BERTopic จะ Embed Seed Keywords เข้าสู่ Vector Space เดียวกัน แล้วใช้ตำแหน่งของ Seed Words เป็น "Anchor" เพื่อดึง Clusters ที่อยู่ใกล้เคียงให้รวมตัวรอบ Theme นั้น
-
-ตัวอย่างที่เห็นได้ชัด: มาตราเกี่ยวกับ "ผู้พิพากษา" Cluster กับ Theme ตุลาการได้ แม้คำว่า "ผู้พิพากษา" จะไม่อยู่ใน Seed List เพราะ WangchanBERTa รู้ว่า "ผู้พิพากษา" และ "ศาล" อยู่ใกล้กันใน Semantic Space
-
-**ผลลัพธ์:** 101 Topics ถูก Map ไปยัง 15 Seed Themes (หรือ "อื่น ๆ" ถ้าไม่มี Match)
+| Theme | Seed Keywords |
+|-------|--------------|
+| ทั่วไป/โครงสร้าง | บททั่วไป, บทสุดท้าย, บทเฉพาะกาล, แก้ไขเพิ่มเติม |
+| สถาบันพระมหากษัตริย์ | พระมหากษัตริย์, สืบราชสมบัติ, องคมนตรี, ผู้สำเร็จราชการ |
+| สิทธิ-เสรีภาพ-หน้าที่ | สิทธิ, เสรีภาพ, หน้าที่, ปวงชน, ชนชาวไทย |
+| แนวนโยบายแห่งรัฐ | แนวนโยบาย, พื้นฐานแห่งรัฐ, รัฐ |
+| นิติบัญญัติ | รัฐสภา, สภาผู้แทนราษฎร, วุฒิสภา, ตรากฎหมาย |
+| บริหาร | คณะรัฐมนตรี, นายกรัฐมนตรี, รัฐมนตรี, บริหาร |
+| ตุลาการ | ศาล, ศาลยุติธรรม, ศาลปกครอง, ศาลรัฐธรรมนูญ |
+| องค์กรอิสระ/องค์กรตามรัฐธรรมนูญ | กกต, ป.ป.ช., ผู้ตรวจการแผ่นดิน, สตง, กสม |
+| ตรวจสอบอำนาจรัฐ/ต้านทุจริต | ตรวจสอบ, ผลประโยชน์, บัญชีทรัพย์สิน, ถอดถอน, ทุจริต |
+| การคลังและงบประมาณ | การคลัง, งบประมาณ, เงินแผ่นดิน, ตรวจเงินแผ่นดิน |
+| ท้องถิ่น | ท้องถิ่น, ปกครองส่วนท้องถิ่น |
+| การมีส่วนร่วมทางการเมือง | ประชามติ, มีส่วนร่วม, เข้าชื่อเสนอ, ลงคะแนนโดยตรง |
+| พรรคการเมืองและการเลือกตั้ง | พรรคการเมือง, เลือกตั้ง, ผู้สมัคร, สมาชิกสภา, เขตเลือกตั้ง |
+| ปฏิรูปประเทศ | ปฏิรูปประเทศ |
+| จริยธรรมทางการเมือง | จริยธรรม, มาตรฐาน, ผู้ดำรงตำแหน่งทางการเมือง |
 
 ### 5.3.4 Hybrid Soft Scoring
 
-นี่คือส่วนที่แตกต่างจาก Attempt 3 อย่างมีนัยสำคัญ แต่ละมาตราผ่านการประเมิน 2 Paths ตามลำดับ:
+นี่คือส่วนที่แตกต่างจาก Attempt 3 อย่างมีนัยสำคัญ แต่ละมาตราจะผ่านการประเมินสองเส้นทางตามลำดับ
 
-**Path 1 — Keyword Overlap (Primary, 2,406 มาตรา / 87.3%)**
+เส้นทางแรกคือ Keyword Overlap ซึ่งเป็น Primary Path ครอบคลุม 2,406 มาตรา (87.3%) สำหรับมาตราที่มี Token ตรงกับ Seed Lexicon อย่างน้อยหนึ่ง Theme คะแนนจะคำนวณจากสัดส่วนของ Seed Keywords ที่ปรากฏในข้อความ แล้ว Normalize ให้รวมเป็น 1.0 ข้ามทุก Theme ที่ได้คะแนน วิธีนี้ให้ความแม่นยำสูงสำหรับภาษากฎหมายรัฐธรรมนูญ เนื่องจากคำศัพท์เฉพาะทางปรากฏอย่างสม่ำเสมอและชัดเจน เช่น "ศาลรัฐธรรมนูญ" ปรากฏเฉพาะในมาตราตุลาการ และ "คณะรัฐมนตรี" ปรากฏเฉพาะในมาตราบริหาร
 
-สำหรับมาตราที่มี Token ตรงกับ Seed Lexicon อย่างน้อยหนึ่ง Theme:
+เส้นทางที่สองคือ Embedding Cosine Similarity ซึ่งเป็น Fallback สำหรับ 331 มาตรา (12.0%) ที่ไม่มี Keyword Match เลย ซึ่งใน Attempt 3 มาตราเหล่านี้จะกลายเป็น Emergent ทั้งหมด วิธีนี้เริ่มจากคำนวณ Theme Centroid โดยเฉลี่ย Embedding ของมาตราทุกมาตราที่ BERTopic Assign ให้ Theme นั้น แล้วคำนวณ Cosine Similarity ระหว่าง Section Embedding กับ Theme Centroids ทั้ง 15 Theme อย่างไรก็ตามพบว่า Cosine Similarity ใน 768-dimensional Space มักให้ Distribution ที่ Flat มาก โดยทุก Theme ได้คะแนนอยู่ในช่วง 0.08–0.10 เนื่องจากข้อความรัฐธรรมนูญทั้ง Corpus อยู่ใน Semantic Region เดียวกัน จึงจำเป็นต้องใช้ Temperature-scaled Softmax ด้วย Temperature 0.05 เพื่อ Amplify ความแตกต่างเล็กน้อยให้กลายเป็นความแตกต่างที่ชัดเจน จากนั้นเก็บเฉพาะ Theme ที่ Sharpened Score ≥ Threshold แล้ว Normalize ที่เหลือให้รวมเป็น 1.0
 
-```
-raw_score(theme) = |tokens ∩ seed_keywords(theme)| / |seed_keywords(theme)|
-theme_score(theme) = raw_score(theme) / sum(raw_score ทุก theme ที่ > 0)
-```
-
-วิธีนี้ให้ความแม่นยำสูงสำหรับภาษากฎหมายรัฐธรรมนูญ เนื่องจากคำศัพท์เฉพาะทางปรากฏอย่างสม่ำเสมอ — เช่น "ศาลรัฐธรรมนูญ" ปรากฏเฉพาะในมาตราตุลาการ และ "คณะรัฐมนตรี" ปรากฏเฉพาะในมาตราบริหาร
-
-**Path 2 — Embedding Cosine Similarity (Fallback, 331 มาตรา / 12.0%)**
-
-สำหรับมาตราที่ไม่มี Keyword Match เลย — ซึ่งใน Attempt 3 จะกลายเป็น Emergent ทั้งหมด:
-
-1. คำนวณ **Theme Centroid** = Mean Embedding ของมาตราทุกมาตราที่ BERTopic Assign ให้ Theme นั้น
-2. คำนวณ Cosine Similarity ระหว่าง Section Embedding กับ Theme Centroids ทั้ง 15 Themes
-3. ใช้ **Temperature-scaled Softmax (T=0.05)** เพื่อ Sharpen Distribution เนื่องจาก Cosine Similarity ใน High-dimensional Space มักจะ Flat (ทุกค่าอยู่ในช่วง 0.08–0.10)
-4. เก็บเฉพาะ Theme ที่ Sharpened Score ≥ Threshold แล้ว Normalize ที่เหลือให้รวมเป็น 1.0
-
-**อื่น ๆ (Emergent) — 19 มาตรา / 0.7%**
-
-มาตราที่ผ่านทั้ง 2 Paths แล้วยัง Assign ไม่ได้ — ไม่มี Keyword Evidence และไม่มี Semantic Signal ที่แข็งแกร่งต่อ Theme Centroid ใดเลย มาตราเหล่านี้เป็นมาตราที่ไม่มีเนื้อหาเชิง Constitutional อย่างแท้จริง เช่น มาตราที่ระบุเพียงชื่อเรียกของรัฐธรรมนูญ หรือมาตราที่อ้างอิงมาตราอื่นโดยไม่มีเนื้อหาในตัวเอง
+มาตราที่ผ่านทั้งสองเส้นทางแล้วยังไม่สามารถ Assign ได้จะถูกจัดเป็น "อื่น ๆ (Emergent)" ซึ่งเหลือเพียง 19 มาตรา (0.7%) มาตราเหล่านี้ไม่มีทั้ง Keyword Evidence และ Semantic Signal ที่แข็งแกร่งต่อ Theme Centroid ใดเลย ส่วนใหญ่เป็นมาตราที่ระบุเพียงชื่อเรียกของรัฐธรรมนูญ หรือมาตราที่อ้างอิงมาตราอื่นโดยไม่มีเนื้อหาในตัวเอง เมื่อเปรียบเทียบกับ Attempt 3 ที่มี Emergent ถึง 352 มาตรา (12.8%) ความแตกต่างนี้แสดงให้เห็นว่า Emergent ใน Attempt 4 เป็นมาตราที่ Genuinely ไม่มีธีมจริง ๆ ไม่ใช่ผลจากข้อจำกัดของ Keyword List อีกต่อไป
 
 ตาราง 12 เปรียบเทียบ Emergent Rate ระหว่าง Attempt 3 และ Attempt 4
 
@@ -162,7 +95,7 @@ theme_score(theme) = raw_score(theme) / sum(raw_score ทุก theme ที่ 
 | Keyword Path | 2,406 มาตรา (87.3%) | 2,406 มาตรา (87.3%) |
 | Embedding Fallback | — | 331 มาตรา (12.0%) |
 
-ผลสำคัญของ Hybrid Scoring คือมาตราหนึ่งจะได้รับ **Fractional Scores ข้าม Theme พร้อมกัน** สะท้อนความจริงที่ว่ามาตรารัฐธรรมนูญมักครอบคลุมหลายประเด็นในมาตราเดียว ดังที่แสดงในตาราง 13
+ผลสำคัญที่สุดของ Hybrid Scoring คือมาตราหนึ่งจะได้รับ Fractional Scores ข้าม Theme พร้อมกัน สะท้อนความจริงที่ว่ามาตรารัฐธรรมนูญมักครอบคลุมหลายประเด็นในมาตราเดียว โดยมาตราส่วนใหญ่ได้ 1–2 Themes ซึ่งสะท้อนว่า Keyword Path ให้ผลที่ Focused ส่วนมาตราที่ได้ 3 Themes ขึ้นไปมักเป็นมาตราที่มีเนื้อหาหลายประเด็นจริง หรืออยู่ใน Embedding Path ที่ Distribution กระจายมากกว่า
 
 ตาราง 13 การกระจายตัวของจำนวน Theme ต่อมาตรา (Attempt 4)
 
@@ -180,11 +113,13 @@ theme_score(theme) = raw_score(theme) / sum(raw_score ทุก theme ที่ 
 
 ### 5.4.1 ไฟล์ Output
 
+Pipeline ใน Attempt 4 ผลิต Output ไฟล์ 6 ไฟล์ดังแสดงในตาราง 14 โดยไฟล์หลักที่ใช้ในการวิเคราะห์ต่อคือ `section_theme_scores.csv` ซึ่งเก็บ Soft Theme Scores ระดับมาตรา โดยแต่ละ Row คือ (section, theme, score) และ Score รวมต่อ Section = 1.0 ส่วนไฟล์อื่น ๆ เป็น Aggregated Summaries ที่ช่วยวิเคราะห์พฤติกรรมของ Theme ในมิติต่าง ๆ
+
 ตาราง 14 ไฟล์ Output จาก Topic Modeling Pipeline (Attempt 4)
 
 | ไฟล์ | เนื้อหา |
 |------|---------|
-| `section_theme_scores.csv` | Soft Theme Scores ระดับมาตรา — แต่ละ Row คือ (section, theme, score) โดย Score รวมต่อ Section = 1.0 |
+| `section_theme_scores.csv` | Soft Theme Scores ระดับมาตรา — Score รวมต่อ Section = 1.0 |
 | `theme_stable_summary.csv` | Coverage และ Stability ของแต่ละ Theme ข้าม 38 รัฐธรรมนูญ |
 | `theme_dynamic_summary.csv` | Trend Delta เปรียบเทียบยุคต้น (Percentile 0–35) กับยุคปลาย (Percentile 65–100) |
 | `theme_timeline_mass.csv` | Theme Mass รวมต่อปี สำหรับ Time-series Visualization |
@@ -193,11 +128,9 @@ theme_score(theme) = raw_score(theme) / sum(raw_score ทุก theme ที่ 
 
 ### 5.4.2 ความเสถียรของ Theme (Theme Stability)
 
-**stable_score** คำนวณจาก:
-```
-stable_score = 0.7 × coverage_ratio + 0.3 × avg_theme_score
-```
-โดย `coverage_ratio` คือสัดส่วนรัฐธรรมนูญที่มี Theme นี้ปรากฏ (Weight 70%) และ `avg_theme_score` คือคะแนนเฉลี่ยของมาตราใน Theme (Weight 30%)
+ผู้จัดทำวัด Stability ของแต่ละ Theme ด้วย stable_score ซึ่งคำนวณจากสัดส่วน 70% ของ Coverage Ratio (จำนวนรัฐธรรมนูญที่มี Theme นี้ปรากฏ) บวกกับ 30% ของ Average Theme Score โดย Theme ที่ปรากฏในรัฐธรรมนูญครบทุกฉบับและมีคะแนนสูงสม่ำเสมอจะได้คะแนน Stability สูงสุด
+
+จากตาราง 15 พบว่า Theme บริหารมี stable_score สูงสุดที่ 0.839 และปรากฏในรัฐธรรมนูญครบทั้ง 38 ฉบับ (100%) สะท้อนว่าการจัดโครงสร้างฝ่ายบริหารเป็นองค์ประกอบพื้นฐานของรัฐธรรมนูญทุกฉบับโดยไม่ขึ้นกับยุคสมัยหรือระบอบการเมือง Theme สถาบันพระมหากษัตริย์และแนวนโยบายแห่งรัฐตามมาด้วย stable_score 0.838 และ 0.820 ตามลำดับ โดยปรากฏใน 36 จาก 38 ฉบับ (94.7%) ในขณะที่ Theme ปฏิรูปประเทศมีเพียง 2 มาตราใน 2 ฉบับ สะท้อนว่าเป็น Theme ที่เกิดขึ้นเฉพาะในรัฐธรรมนูญยุคหลังตั้งแต่ พ.ศ. 2560 เป็นต้นไป
 
 ตาราง 15 สรุป Theme Stability ทั้ง 15 Themes
 
@@ -219,22 +152,13 @@ stable_score = 0.7 × coverage_ratio + 0.3 × avg_theme_score
 | องค์กรอิสระ/องค์กรตามรัฐธรรมนูญ | 19 | 7/38 | 18.4% | 0.249 |
 | ปฏิรูปประเทศ | 2 | 2/38 | 5.3% | 0.337 |
 
-**Theme บริหาร** ปรากฏในรัฐธรรมนูญทุกฉบับ (100%) — เป็น Theme ที่ Stable ที่สุด สะท้อนว่าการจัดโครงสร้างฝ่ายบริหารเป็นองค์ประกอบพื้นฐานของรัฐธรรมนูญทุกฉบับโดยไม่ขึ้นกับยุคสมัยหรือระบอบการเมือง
-
-**Theme ปฏิรูปประเทศ** มีเพียง 2 มาตราใน 2 ฉบับ — สะท้อนว่าเป็น Theme ที่เกิดขึ้นเฉพาะในรัฐธรรมนูญยุคหลัง (พ.ศ. 2560 เป็นต้นไป)
-
 รูปที่ 5.4.1 แสดง Heatmap สัดส่วนมาตราของแต่ละ Theme ต่อรัฐธรรมนูญแต่ละฉบับ
 
 ### 5.4.3 พลวัตของ Theme (Theme Dynamics)
 
-**trend_delta** คำนวณจากการเปรียบเทียบสัดส่วน Theme Mass ระหว่างยุคต้น (Percentile 0–35) กับยุคปลาย (Percentile 65–100):
+เพื่อวิเคราะห์ว่า Theme ใดมีน้ำหนักเพิ่มขึ้นหรือลดลงในรัฐธรรมนูญยุคหลัง ผู้จัดทำคำนวณ trend_delta โดยเปรียบเทียบสัดส่วน Theme Mass ระหว่างรัฐธรรมนูญยุคต้น (Percentile 0–35) กับยุคปลาย (Percentile 65–100) ค่าบวกหมายความว่า Theme มีสัดส่วนเพิ่มขึ้นในรัฐธรรมนูญยุคหลัง ส่วนค่าลบหมายความว่าลดลง
 
-```
-trend_delta = last_ratio − first_ratio
-```
-
-ค่าบวก หมายความว่า Theme มีสัดส่วนเพิ่มขึ้นในรัฐธรรมนูญยุคหลัง
-ค่าลบ หมายความว่า Theme มีสัดส่วนลดลงในรัฐธรรมนูญยุคหลัง
+จากตาราง 16 พบว่า Theme ตุลาการมี trend_delta สูงสุดที่ +0.052 โดยเพิ่มจาก 6.4% ในยุคต้นเป็น 11.6% ในยุคปลาย Theme ท้องถิ่นและตรวจสอบอำนาจรัฐก็เพิ่มขึ้นเช่นกัน สะท้อนพัฒนาการของสถาบันทางการเมืองในทิศทางของ Rule of Law ที่ให้ความสำคัญกับการตรวจสอบถ่วงดุลอำนาจมากขึ้น ในทางกลับกัน Theme สถาบันพระมหากษัตริย์มี trend_delta ลบมากที่สุดที่ −0.077 โดยลดจาก 19.7% เป็น 12.0% ซึ่งไม่ได้หมายความว่าความสำคัญของสถาบันลดลง แต่สะท้อนว่าเนื้อหาของรัฐธรรมนูญยุคหลังขยายครอบคลุมประเด็นอื่น ๆ มากขึ้น ทำให้สัดส่วนโดยรวมลดลงตามธรรมชาติ
 
 ตาราง 16 สรุป Theme Dynamics (เฉพาะ Theme ที่มีการเปลี่ยนแปลงชัดเจน)
 
@@ -249,11 +173,13 @@ trend_delta = last_ratio − first_ratio
 | พรรคการเมืองและการเลือกตั้ง | 6.9% | 4.9% | −0.020 | ลดลง |
 | สถาบันพระมหากษัตริย์ | 19.7% | 12.0% | −0.077 | ลดมากที่สุด |
 
-รัฐธรรมนูญยุคหลังให้น้ำหนักกับ **Theme ตุลาการ** และ **กลไกตรวจสอบ** มากขึ้น สะท้อนพัฒนาการของสถาบันทางการเมืองในทิศทางของ Rule of Law ในขณะที่ **Theme สถาบันพระมหากษัตริย์** มีสัดส่วน Section Count ลดลงในเชิงปริมาณ — ซึ่งไม่ได้หมายความว่าความสำคัญของสถาบันลดลง แต่สะท้อนว่าเนื้อหาของรัฐธรรมนูญยุคหลังขยายครอบคลุมประเด็นอื่น ๆ เพิ่มมากขึ้น
-
-รูปที่ 5.4.2 แสดงสัดส่วนของแต่ละ Theme ต่อรัฐธรรมนูญแต่ละฉบับ แสดงให้เห็นพลวัตเชิงเวลาข้าง Constitutions ทั้ง 38 ฉบับ
+รูปที่ 5.4.2 แสดงสัดส่วนของแต่ละ Theme ต่อรัฐธรรมนูญแต่ละฉบับ แสดงให้เห็นพลวัตเชิงเวลาข้ามรัฐธรรมนูญทั้ง 38 ฉบับ
 
 ### 5.4.4 Co-occurrence ระหว่าง Theme
+
+นอกจากการวิเคราะห์รายธีมแล้ว ผู้จัดทำยังวิเคราะห์ว่า Theme คู่ใดมักปรากฏร่วมกันในมาตราเดียวกันมากที่สุด โดยข้อมูลนี้เก็บไว้ใน `conflict_edges.csv`
+
+จากตาราง 17 พบว่าคู่ที่มี Co-occurrence สูงสุดคือ นิติบัญญัติ กับ สถาบันพระมหากษัตริย์ ที่ปรากฏร่วมกันใน 117 มาตรา สะท้อนให้เห็นว่ามาตราเกี่ยวกับ Legislative Process ในรัฐธรรมนูญไทยมักกล่าวถึงพระราชอำนาจในกระบวนการนิติบัญญัติควบคู่กันเสมอ เช่น การทรงลงพระปรมาภิไธย หรือการยับยั้งร่างกฎหมาย คู่ลำดับถัดมาคือ นิติบัญญัติ กับ บริหาร (97 มาตรา) และ นิติบัญญัติ กับ พรรคการเมืองและการเลือกตั้ง (94 มาตรา) ซึ่งล้วนสะท้อนให้เห็นว่า Theme นิติบัญญัติเป็น Theme ที่มีการเชื่อมโยงสูงสุดกับ Theme อื่น ๆ ในรัฐธรรมนูญไทย
 
 ตาราง 17 Theme Co-occurrence ที่พบบ่อยที่สุด (จำนวนมาตราที่มีทั้งสอง Theme พร้อมกัน)
 
@@ -268,24 +194,30 @@ trend_delta = last_ratio − first_ratio
 | สถาบันพระมหากษัตริย์ | แนวนโยบายแห่งรัฐ | 34 |
 | นิติบัญญัติ | แนวนโยบายแห่งรัฐ | 32 |
 
-**Theme นิติบัญญัติ** มี Co-occurrence สูงที่สุดกับ **สถาบันพระมหากษัตริย์** (117 มาตรา) — สะท้อนว่ามาตราเกี่ยวกับ Legislative Process ในรัฐธรรมนูญไทยมักกล่าวถึงพระราชอำนาจในกระบวนการนิติบัญญัติควบคู่กันเสมอ เช่น การทรงลงพระปรมาภิไธย การยับยั้งร่างกฎหมาย
-
 ---
 
 ## 5.5 ข้อจำกัด
 
-**1. WangchanBERTa ไม่ได้ถูก Pre-train บน Legal Text**
+แม้ว่า Pipeline ใน Attempt 4 จะแก้ปัญหา Emergent Rate ได้อย่างมีประสิทธิภาพ แต่ยังมีข้อจำกัดสำคัญที่ควรพิจารณา
 
-WangchanBERTa ถูก Pre-train บน Thai Common Crawl (ข้อความทั่วไปจากอินเทอร์เน็ต) ไม่ใช่ภาษากฎหมายรัฐธรรมนูญโดยตรง ทำให้ Semantic Neighborhood ของคำศัพท์เฉพาะทางกฎหมายอาจไม่ถูกต้องทั้งหมด เช่น "วรรค" ในบริบทกฎหมายหมายถึง Paragraph หรือ Clause แต่ใน General Thai อาจมี Connotation อื่น
+ข้อจำกัดแรกคือ WangchanBERTa ไม่ได้ถูก Pre-train บน Legal Text โดยตรง โมเดลถูก Pre-train บน Thai Common Crawl ซึ่งเป็นข้อความทั่วไปจากอินเทอร์เน็ต ทำให้ Semantic Neighborhood ของคำศัพท์เฉพาะทางกฎหมายอาจไม่ถูกต้องทั้งหมด ตัวอย่างเช่น คำว่า "วรรค" ในบริบทกฎหมายหมายถึง Paragraph หรือ Clause แต่ใน General Thai อาจมี Connotation ที่แตกต่างออกไป
 
-**2. Embedding-based Soft Scoring มีประสิทธิภาพจำกัดสำหรับภาษารัฐธรรมนูญไทย**
+ข้อจำกัดที่สองเกี่ยวกับ Embedding-based Soft Scoring ที่มีประสิทธิภาพจำกัดสำหรับภาษารัฐธรรมนูญไทย พบว่า Cosine Similarity ใน 768-dimensional Space ให้ Distribution ที่ Flat มาก เนื่องจากข้อความรัฐธรรมนูญทั้ง Corpus อยู่ใน Semantic Region เดียวกัน ทำให้ทุก Theme Centroid ได้คะแนนใกล้เคียงกันจนแยกแยะไม่ได้ การใช้ Temperature-scaled Softmax เพื่อ Sharpen Distribution เป็น Post-hoc Correction ไม่ใช่ผลโดยตรงจากโมเดล นี่คือเหตุผลที่ Attempt 4 ใช้ Embedding เฉพาะเป็น Fallback ไม่ใช่ Primary Method
 
-ในระหว่างการพัฒนาพบว่า Cosine Similarity ใน 768-dimensional Space ให้ Distribution ที่ Flat มาก เนื่องจากข้อความรัฐธรรมนูญทั้ง Corpus อยู่ใน Semantic Region เดียวกัน ทำให้ทุก Theme Centroid ได้คะแนนใกล้เคียงกันจนแยกแยะไม่ได้ จำเป็นต้องใช้ Temperature-scaled Softmax เพื่อ Sharpen Distribution ซึ่งเป็น Post-hoc Correction ไม่ใช่ผลโดยตรงจากโมเดล — นี่คือเหตุผลที่ Attempt 4 ใช้ Embedding เฉพาะเป็น Fallback ไม่ใช่ Primary Method
+ข้อจำกัดที่สามคือ Seed Themes ทั้ง 15 Themes ถูกออกแบบโดยอ้างอิงจาก Domain Knowledge ของโครงสร้างรัฐธรรมนูญไทยและ Chapter Structure ที่พบจาก EDA ไม่ได้เกิดจาก Data-driven Process เพียงอย่างเดียว ความครบถ้วนและความเหมาะสมของ Taxonomy จึงขึ้นอยู่กับ Judgment ของผู้วิจัย นักวิจัยคนอื่นอาจกำหนด Theme Boundaries ต่างออกไป ซึ่งจะให้ Soft Scores และ Coverage Statistics ที่แตกต่างกัน
 
-**3. Seed Themes เป็น Researcher-defined**
+ข้อจำกัดสุดท้ายคือมาตราที่อ้างอิงมาตราอื่นถูก Embed แบบ Isolated มาตราที่มีเนื้อหาเป็นการอ้างอิง เช่น "ให้นำมาตรา 87 มาใช้บังคับโดยอนุโลม" ถูก Embed จากข้อความของตัวเองเท่านั้นโดยไม่รวมเนื้อหาของมาตราที่ถูกอ้างอิง ทำให้ Embedding ไม่สะท้อน Semantic Content ที่แท้จริง มาตราประเภทนี้เป็นส่วนหนึ่งของ 19 มาตราที่ยังคงเป็น Emergent
 
-15 Themes ถูกออกแบบโดยอ้างอิงจาก Domain Knowledge ของโครงสร้างรัฐธรรมนูญไทยและ Chapter Structure ที่พบจากการวิเคราะห์ข้อมูลในขั้นตอน EDA ไม่ได้เกิดจาก Data-driven Process เพียงอย่างเดียว ความครบถ้วนและความเหมาะสมของ Taxonomy ขึ้นอยู่กับ Judgment ของผู้วิจัย — นักวิจัยคนอื่นอาจกำหนด Theme Boundaries ต่างออกไป ซึ่งจะให้ Soft Scores และ Coverage Statistics ที่แตกต่างกัน
+---
 
-**4. มาตราที่อ้างอิงมาตราอื่นถูก Embed แบบ Isolated**
+## 5.6 ประโยชน์ของ section_theme_scores.csv
 
-มาตราที่มีเนื้อหาเป็นการอ้างอิง เช่น "ให้นำมาตรา 87 มาใช้บังคับโดยอนุโลม" ถูก Embed จากข้อความของตัวเองเท่านั้น โดยไม่รวมเนื้อหาของมาตราที่ถูกอ้างอิง ทำให้ Embedding ไม่สะท้อน Semantic Content ที่แท้จริงของมาตรานั้น มาตราประเภทนี้เป็นส่วนหนึ่งของ 19 มาตราที่ยังเป็น Emergent
+ผลลัพธ์สำคัญที่สุดของกระบวนการทั้งหมดในบทนี้คือไฟล์ `section_theme_scores.csv` ซึ่งเก็บ Soft Theme Score ของมาตราทุกมาตราในคลังข้อมูล การที่มาตราแต่ละมาตรามี Score กระจายข้าม Theme พร้อมกันแทนที่จะได้รับ Label เดียว ทำให้ข้อมูลชุดนี้เปิดโอกาสในการวิเคราะห์เชิงลึกได้สองทิศทางหลัก
+
+**ทิศทางที่ 1 — ดูว่ามาตราหนึ่งพูดถึงเรื่องอะไร และ Theme นั้นเชื่อมโยงไปหาเรื่องอะไรบ้าง**
+
+กรองด้วย `section_id` เพื่อดู Score ของแต่ละ Theme ว่ามาตรานั้นพูดถึงประเด็นใดเป็นหลักและรอง หรือกรองด้วย Theme เพื่อเปรียบเทียบความครอบคลุมข้ามรัฐธรรมนูญแต่ละฉบับ และใช้ `conflict_edges.csv` ดูว่า Theme นั้นมักปรากฏร่วมกับ Theme ใดในระดับมาตรา
+
+**ทิศทางที่ 2 — หาความสัมพันธ์ระหว่างมาตรา Theme และ Parameter อื่น ๆ**
+
+Join กับ `sections_v2.csv` ผ่าน `section_id` เพื่อนำ Parameter อย่าง `era`, `regime_type`, `doc_type`, `section_role` และ `change_mode` มาวิเคราะห์ร่วม เช่น Theme ตุลาการสูงกว่าในยุค Civilian หรือ Military มาตรา `amended` กระจุกอยู่ใน Theme ใด หรือ Theme ใดมีมาตรา `repealed` มากที่สุด โดยไม่ต้องประมวลผล NLP ใหม่
